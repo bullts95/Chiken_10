@@ -89,7 +89,7 @@ if uploaded_file is not None:
     st.sidebar.success(f"Uploadデータ使用: {len(df_global)}件")
 else:
     # リポジトリ内のデフォルトCSVを探す
-    default_csv = "cases_list_integrated.csv"
+    default_csv = "Cases_list_integrated.csv"
     if os.path.exists(default_csv):
         df_global = load_data(default_csv)
         st.sidebar.info(f"リポジトリ内データ使用: {len(df_global)}件")
