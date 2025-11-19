@@ -1,10 +1,13 @@
 streamlit
 pandas
-langchain
+# LangChain関連（バージョン依存が激しいので注意）
+langchain>=0.2.0
+langchain-core>=0.2.0
 langchain-openai
 langchain-chroma
 langchain-huggingface
 langgraph
+# その他
 sentence-transformers
 httpx
 pysqlite3-binary
