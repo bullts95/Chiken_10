@@ -164,7 +164,8 @@ def analyze_statistics(query: str) -> str:
        - 「裁判所」 -> 'court_type'
        - 「審判日」「日付」 -> 'decision_date' (形式: YYYY-MM-DD)
        - 「申立内容」「申立ての種類」 -> 'petition_type'
-       - 「虐待」「虐待の類型」 -> 'abuse_type'
+       - 「虐待」「虐待の類型」 -> 'abuse_type_1', 'abuse_type_2, ...'
+
 
     2. 当事者 (タグ情報)
        - 「申立人」 -> 'petitioner_A_tag', 'petitioner_B_tag' (人数は 'petitioner_count')
