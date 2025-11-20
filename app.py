@@ -163,6 +163,7 @@ def analyze_statistics(query: str) -> str:
        - 「裁判所」 -> 'court_type'
        - 「審判日」「日付」 -> 'decision_date' (形式: YYYY-MM-DD)
        - 「申立内容」「申立ての種類」 -> 'petition_type'
+          ※親権停止,親権喪失のどちらかで,他に入るものはない。勝手に作らないこと
        - 「虐待」「虐待の類型」 -> 'abuse_type_1', 'abuse_type_2, ...'
 
 
@@ -180,7 +181,7 @@ def analyze_statistics(query: str) -> str:
 
 
     4. 審判結果 (最も重要)
-       - 「結果」「判決」 -> 'child_A_result', 'child_B_result', 'child_C_result', 'child_D_result'      
+       - 「結果」「審判」 -> 'child_A_result', 'child_B_result', 'child_C_result', 'child_D_result'      
        - 「停止期間」「月数」 -> 'child_A_suspension_months', ... (数値)
        - 「停止終了日」 -> 'child_A_suspension_end_date', ...
 
