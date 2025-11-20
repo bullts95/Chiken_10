@@ -167,7 +167,7 @@ def analyze_statistics(query: str) -> str:
        - 「事例ID」「ID」 -> 'case_id'
        - 「裁判所」 -> 'court_type'
        - 「審判日」「日付」 -> 'decision_date' (形式: YYYY-MM-DD)
-       - 「申立内容」「申立ての種類」 -> 'petition_type'
+       - 「申立内容」「申立ての種類」 「申立て」-> 'petition_type'
           ※「親権停止」,「親権喪失」,「親権停止取消し」のいずれかで、他に入るものはない。勝手に作らないこと
        - 「虐待」「虐待の類型」 -> 'abuse_type_1', 'abuse_type_2, ...'
 
@@ -179,7 +179,8 @@ def analyze_statistics(query: str) -> str:
 
     3. 子どもの情報 (重要: 最大4人まで列が横に展開されています)
        - 「子の代理人の有無」 -> 'child_counsel'
-          ※この列がTrueでなければ、「子」又は「未成年者」に代理人はついていなかったことになる。
+          ※この列が'True'であれば、こどもに代理人がついていたことになり、'False'であれば、ついていなかったことになる。
+          ※子の代理人については、法定代理人を含めないこととする。
        - 「子の人数」 -> 'child_count'
        - 「子」「子供」 -> 'child_A_tag', 'child_B_tag', 'child_C_tag', 'child_D_tag'
        - 「年齢」 -> 'child_A_age', 'child_B_age', 'child_C_age', 'child_D_age'
