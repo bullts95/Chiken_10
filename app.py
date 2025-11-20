@@ -81,7 +81,7 @@ with st.sidebar:
 @st.cache_data
 def load_data(file_or_path) -> pd.DataFrame:
     try:
-        return pd.read_csv(file_or_path)
+        return pd.read_csv(file_or_path, encoding='utf-8-sig')
     except Exception as e:
         return pd.DataFrame()
 
@@ -211,6 +211,7 @@ def analyze_statistics(query: str) -> str:
     【データセット情報】
     変数名: df
     全ての列名: {columns_list}
+    データ件数: {len(df_global)}件
     
     {column_mapping_prompt}
     
