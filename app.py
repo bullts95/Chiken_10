@@ -32,7 +32,7 @@ from langchain_huggingface import HuggingFaceEmbeddings
 # ▼ 設定・定数
 # -----------------------------------------------------------------
 st.set_page_config(page_title="Legal Analysis Chatbot", layout="wide")
-st.title("🤖 親権喪失・停止事例分析チャットボット (Team Demo)")
+st.title("🤖 親権喪失・停止事例表分析チャットボット (Team Demo)")
 
 # サイドバー設定
 with st.sidebar:
