@@ -214,18 +214,7 @@ def analyze_statistics(query: str) -> str:
     - Pythonコードのみを出力 (Markdownタグなし)。
     - 結果は必ず `print()` で出力。
     """
-    prompt = f"""
-    あなたは優秀なPythonデータアナリストです。
-    ユーザーの質問に答えるための Pandas コードのみを書いてください。
-    変数名は 'df' を使用。列名: [{columns_list}]
-    
-    質問: {query}
-    
-    ルール:
-    - Pythonコードのみ出力(Markdownタグ不要)
-    - 結果は print() で出力
-    - グラフ描画禁止
-    """
+
 
     try:
         response = coder_llm.invoke(prompt)
