@@ -109,6 +109,7 @@ def get_llm_client(base_url, api_key="lm-studio"):
     return ChatOpenAI(
         base_url=base_url,
         api_key=api_key,
+
         model=model_name,
         temperature=0.0,
         http_client=custom_client
@@ -146,7 +147,6 @@ def analyze_statistics(query: str) -> str:
     ユーザーが具体的な case_id を指定せず、「〜な事案について教えて」「検察官の申立ては？」のように質問した場合、
     必ずこのツールを使って Pandas コードを実行し、該当するデータの抽出や要約を行ってください。
     """
-    # ... (以下の中身のコードは変更なし) ...
     # ngrok経由でCode生成用LLMを呼ぶ
     if not ngrok_url:
         return "エラー: ngrok URLが設定されていません。"
@@ -178,7 +178,7 @@ def analyze_statistics(query: str) -> str:
           ※ [父], [母], [検察官], [児童相談所長] などが含まれる。「未成年者本人」とは、[子]のことを指す。
 
     3. 子どもの情報 (重要: 最大4人まで列が横に展開されています)
-       - 「子の代理人の有無」 -> 'child_counsel'
+       - 「子の代理人の有無」 -> 'Child_counsel'
           ※この列が'True'であれば、こどもに代理人がついていたことになり、'False'であれば、ついていなかったことになる。
           ※子の代理人については、法定代理人を含めないこととする。
        - 「子の人数」 -> 'child_count'
@@ -189,8 +189,8 @@ def analyze_statistics(query: str) -> str:
 
     4. 審判結果 (最も重要)
        - 「結果」「審判」 -> 'child_A_result', 'child_B_result', 'child_C_result', 'child_D_result'      
-       - 「停止期間」「月数」 -> 'child_A_suspension_months', ... (数値)
-       - 「停止終了日」 -> 'child_A_suspension_end_date', ...
+       - 「停止期間」「月数」 -> 'childA_Suspension_months', 'child_B_Suspension_months', ... (数値)
+       - 「停止終了日」 -> 'childA_Suspension_end_date', 'child_B_Suspension_end_date', ...
 
     【コード生成時の特別ルール】
     ルール1 (複数列の検索):
