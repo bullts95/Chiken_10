@@ -152,6 +152,67 @@ def analyze_statistics(query: str) -> str:
 
     columns_list = ", ".join(df_global.columns.tolist()) if not df_global.empty else "なし"
     
+    # ---------------------------------------------------------
+    # ▼ 列名の定義辞書 (ご提示のCSV定義に合わせて作成)
+    # ---------------------------------------------------------
+    column_mapping_prompt = """
+    【重要: 列名の定義辞書 (日本語の質問 -> 変数名)】
+    ユーザーの質問に含まれる単語は、以下のルールに従って列名に変換してください。
+
+    1. 事案の基本情報
+       - 「事例ID」「ID」 -> 'case_id'
+       - 「裁判所」 -> 'court_type'
+       - 「審判日」「日付」 -> 'decision_date' (形式: YYYY-MM-DD)
+       - 「申立内容」「申立ての種類」 -> 'petition_type'
+       - 「虐待」「虐待の類型」 -> 'abuse_type'
+
+    2. 当事者 (タグ情報)
+       - 「申立人」 -> 'petitioner_A_tag', 'petitioner_B_tag' (人数は 'petitioner_count')
+       - 「事件本人」「相手方」「親」 -> 'subject_A_tag', 'subject_B_tag' (人数は 'subject_count')
+          ※ [父], [母], [検察官], [児童相談所長] などが含まれる。
+
+    3. 子どもの情報 (重要: 最大4人まで列が横に展開されています)
+       - 「子の人数」 -> 'child_count'
+       - 「子」「子供」 -> 'child_A_tag', 'child_B_tag', 'child_C_tag', 'child_D_tag'
+       - 「年齢」 -> 'child_A_age', 'child_B_age', 'child_C_age', 'child_D_age'
+       - 「監護状況」 -> 'child_A_custody', 'child_B_custody', 'child_C_custody', 'child_D_custody'
+
+
+    4. 審判結果 (最も重要)
+       - 「結果」「判決」 -> 'child_A_result', 'child_B_result', 'child_C_result', 'child_D_result'      
+       - 「停止期間」「月数」 -> 'child_A_suspension_months', ... (数値)
+       - 「停止終了日」 -> 'child_A_suspension_end_date', ...
+
+    【コード生成時の特別ルール】
+    ルール1 (複数列の検索):
+      「結果が親権喪失の事案」のように検索する場合、対象は子供ごとに分かれています。
+      必ず `child_A_result`, `child_B_result`, `child_C_result`, `child_D_result`のいずれかが条件を満たすか確認してください。
+      (例: `df[(df['child_A_result'] == '親権喪失') | (df['child_B_result'] == '親権喪失')]`)
+
+    ルール2 (特定の子の指定):
+      「第1子」や「長男・長女」等の指定がない限り、基本的には 'child_A_...' (第1子) を主として分析してください。
+      ただし「全体」や「件数」を聞かれた場合は、事案単位(`case_id`)でカウントしてください。
+    """
+
+    # 4. プロンプトの構築 (以前と同じ構成に、上記の辞書を埋め込み)
+    prompt = f"""
+    あなたは優秀なPythonデータアナリストです。
+    ユーザーの質問に答えるための Pandas コードのみを書いてください。
+    
+    【データセット情報】
+    変数名: df
+    全ての列名: {columns_list}
+    
+    {column_mapping_prompt}
+    
+    【ユーザーの質問】
+    {query}
+    
+    【出力ルール】
+    - 上記の辞書にある列名を正確に使用すること。存在しない列名(例: 'judgment', 'result_all')は禁止。
+    - Pythonコードのみを出力 (Markdownタグなし)。
+    - 結果は必ず `print()` で出力。
+    """
     prompt = f"""
     あなたは優秀なPythonデータアナリストです。
     ユーザーの質問に答えるための Pandas コードのみを書いてください。
