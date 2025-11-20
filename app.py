@@ -1,4 +1,3 @@
-# app.py
 import sys
 import io
 import os
@@ -269,7 +268,7 @@ def get_ref_retriever(db_path):
         st.error(f"DBロードエラー: {e}")
         return None
 
-def search_references_action(user_query):
+def search_references_action(user_query, llm_client):
     if not os.path.exists(db_refs_path):
         return "⚠️ リポジトリ内に 'DB' フォルダが見つかりません。"
 
@@ -281,14 +280,44 @@ def search_references_action(user_query):
         docs = retriever.invoke(user_query)
         if not docs: return "関連文献なし"
         
-        result_text = f"**Q: {user_query}** に関連する参考文献:\n\n"
+        # 1. コンテキストの構築
+        context_list = []
+        ref_display_text = ""
+        
         for i, doc in enumerate(docs, 1):
             source = doc.metadata.get("source", "不明")
-            content = doc.page_content.replace("\n", " ")[:300]
-            result_text += f"**[{i}] {source}**\n> {content}...\n\n"
-        return result_text
+            content = doc.page_content.replace("\n", " ")
+            
+            # LLM入力用
+            context_list.append(f"文献[{i}] (出典: {source}):\n{content}")
+            
+            # 表示用 (抜粋)
+            ref_display_text += f"**[{i}] {source}**\n> {content[:300]}...\n\n"
+
+        context_str = "\n\n".join(context_list)
+
+        # 2. LLMによる回答生成
+        prompt = f"""
+        あなたは法律の専門家です。以下の【参考文献】の内容のみに基づいて、ユーザーの【質問】に回答してください。
+        回答の際は、どの文献を参照したか（例: [1]）を文中に明記してください。
+        参考文献に答えが含まれていない場合は、「参考文献には記載がありません」と答えてください。
+
+        【参考文献】
+        {context_str}
+
+        【質問】
+        {user_query}
+        """
+        
+        response = llm_client.invoke(prompt)
+        answer = response.content
+
+        # 3. 結果の結合
+        final_output = f"### 🤖 参考文献に基づく回答\n{answer}\n\n---\n### 📚 参照された文献\n{ref_display_text}"
+        return final_output
+
     except Exception as e:
-        return f"検索エラー: {e}"
+        return f"検索・生成エラー: {e}"
 
 # -----------------------------------------------------------------
 # ▼ 4. LangGraph 構築
@@ -379,7 +408,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "assis
         last_user_query = st.session_state.messages[-2]["content"]
         if st.button("📚 参考文献も検索する"):
             with st.spinner("検索中... (初回はモデルロードに時間がかかります)"):
-                ref_result = search_references_action(last_user_query)
+                ref_result = search_references_action(last_user_query, main_llm_client)
                 st.session_state.messages.append({
                     "role": "assistant",
                     "content": ref_result,
