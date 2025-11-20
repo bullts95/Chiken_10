@@ -137,13 +137,16 @@ def get_case_details(case_id: str) -> str:
 
 @tool
 def analyze_statistics(query: str) -> str:
-    """統計分析専用ツール。Pythonコードを生成・実行して結果を返します。"""
-    # ツール内でLLMを呼ぶため、グローバル変数または引数からURL取得が必要
-    # ここでは簡易的にst.session_stateなどを参照せず、再初期化で対応
+    """
+    【重要】統計分析だけでなく、「条件に合う事案の検索」にも使用します。
+    ユーザーが具体的な case_id を指定せず、「〜な事案について教えて」「検察官の申立ては？」のように質問した場合、
+    必ずこのツールを使って Pandas コードを実行し、該当するデータの抽出や要約を行ってください。
+    """
+    # ... (以下の中身のコードは変更なし) ...
+    # ngrok経由でCode生成用LLMを呼ぶ
     if not ngrok_url:
         return "エラー: ngrok URLが設定されていません。"
     
-    # ngrok経由でCode生成用LLMを呼ぶ
     base_url_v1 = ngrok_url.rstrip("/") + "/v1"
     coder_llm = get_llm_client(base_url_v1)
 
@@ -251,14 +254,27 @@ def build_graph(_llm_client):
 
     def agent_node(state: AgentState):
         messages = state['messages']
+        # システムプロンプトを強化
         system_prompt = SystemMessage(content="""
-        あなたは法律専門家アシスタントです。
-        ツールを使用して事実に基づき回答してください。
+        あなたは法律専門家のアシスタントです。
+        以下のルールに従って回答してください。
+
+        1. **具体的な case_id がない質問の場合:**
+           - 即座に「IDがない」と断らず、必ず `analyze_statistics` ツールを使ってデータを検索してください。
+           - 例: "df[df['petitioner'] == '検察官']" のようなコードを実行して事例を探します。
+
+        2. **データの読み方:**
+           - `petition_type` は「申立内容」、`child_..._result` は「最終判断」です。
+           - `result: 却下` は「申立てが認められなかった」という意味です。
+        
+        ユーザーの役に立つよう、データに基づいた具体的な回答を心がけてください。
         """)
         
         # システムプロンプト管理
         if not isinstance(messages[0], SystemMessage):
             messages = [system_prompt] + messages
+        else:
+            messages[0] = system_prompt # 既存があれば上書き
         
         response = llm_with_tools.invoke(messages)
         return {"messages": [response]}
