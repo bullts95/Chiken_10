@@ -172,6 +172,7 @@ def analyze_statistics(query: str) -> str:
           ※ [父], [母], [検察官], [児童相談所長] などが含まれる。
 
     3. 子どもの情報 (重要: 最大4人まで列が横に展開されています)
+       - 「子の代理人の有無」 -> Child_counsel
        - 「子の人数」 -> 'child_count'
        - 「子」「子供」 -> 'child_A_tag', 'child_B_tag', 'child_C_tag', 'child_D_tag'
        - 「年齢」 -> 'child_A_age', 'child_B_age', 'child_C_age', 'child_D_age'
