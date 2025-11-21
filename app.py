@@ -75,6 +75,14 @@ with st.sidebar:
     # リポジトリ直下に 'DB' フォルダがある前提
     db_refs_path = st.text_input("参考文献DBパス", value="./DB")
 
+    st.markdown("---")
+    st.write("🔍 **検索設定**")
+    search_mode = st.radio(
+        "検索モードを選択",
+        ["事例検索 (Tools)", "参考文献検索 (RAG)"],
+        index=0
+    )
+
 # -----------------------------------------------------------------
 # ▼ 1. データのロード
 # -----------------------------------------------------------------
@@ -170,6 +178,7 @@ def analyze_statistics(query: str) -> str:
        - 「申立内容」「申立ての種類」 「申立て」-> 'petition_type'
           ※「親権停止」,「親権喪失」,「親権停止取消し」のいずれかで、他に入るものはない。勝手に作らないこと
        - 「虐待」「虐待の類型」 -> 'abuse_type_1', 'abuse_type_2, ...'
+          ※「身体的虐待」,「性的虐待」,「心理的虐待」,「ネグレクト」,「医療ネグレクト」のいずれかで,他に入るものはない。日本語のみである。
 
 
     2. 当事者 (タグ情報)
@@ -411,19 +420,9 @@ for message in st.session_state.messages:
             with st.expander("詳細データ"):
                 st.text(message["tool_output"])
 
-# 参考文献ボタン
-if st.session_state.messages and st.session_state.messages[-1]["role"] == "assistant":
-    if len(st.session_state.messages) >= 2:
-        last_user_query = st.session_state.messages[-2]["content"]
-        if st.button("📚 参考文献も検索する"):
-            with st.spinner("検索中... (初回はモデルロードに時間がかかります)"):
-                ref_result = search_references_action(last_user_query, main_llm_client)
-                st.session_state.messages.append({
-                    "role": "assistant",
-                    "content": ref_result,
-                    "tool_output": None
-                })
-                st.rerun()
+# 参考文献ボタン (削除: モード選択式に変更のため)
+# if st.session_state.messages and st.session_state.messages[-1]["role"] == "assistant":
+#     ...
 
 # チャット入力
 if prompt := st.chat_input("質問を入力..."):
@@ -436,44 +435,66 @@ if prompt := st.chat_input("質問を入力..."):
 
     with st.chat_message("assistant"):
         message_placeholder = st.empty()
-        status_container = st.status("思考中...", expanded=True)
         
-        # LangGraph実行用メッセージ変換
-        lc_messages = []
-        for m in st.session_state.messages:
-            role = "user" if m["role"] == "user" else "assistant"
-            lc_messages.append(HumanMessage(content=m["content"]) if role == "user" else AIMessage(content=m["content"]))
-
-        try:
-            inputs = {"messages": lc_messages}
-            full_response = ""
-            captured_outputs = []
-
-            for event in app.stream(inputs, stream_mode="values"):
-                last_msg = event["messages"][-1]
-                
-                if hasattr(last_msg, 'tool_calls') and last_msg.tool_calls:
-                    for tc in last_msg.tool_calls:
-                        status_container.write(f"🛠️ {tc['name']}")
-                
-                elif last_msg.type == "tool":
-                    captured_outputs.append(last_msg.content)
-                
-                elif isinstance(last_msg, AIMessage) and not last_msg.tool_calls:
-                    full_response = last_msg.content
-                    message_placeholder.markdown(full_response)
-
-            status_container.update(label="完了", state="complete", expanded=False)
+        # ---------------------------------------------------------
+        # A. 事例検索 (Tools) モード
+        # ---------------------------------------------------------
+        if search_mode == "事例表検索 (Tools)":
+            status_container = st.status("思考中...", expanded=True)
             
-            if full_response:
+            # LangGraph実行用メッセージ変換
+            lc_messages = []
+            for m in st.session_state.messages:
+                role = "user" if m["role"] == "user" else "assistant"
+                lc_messages.append(HumanMessage(content=m["content"]) if role == "user" else AIMessage(content=m["content"]))
+
+            try:
+                inputs = {"messages": lc_messages}
+                full_response = ""
+                captured_outputs = []
+
+                for event in app.stream(inputs, stream_mode="values"):
+                    last_msg = event["messages"][-1]
+                    
+                    if hasattr(last_msg, 'tool_calls') and last_msg.tool_calls:
+                        for tc in last_msg.tool_calls:
+                            status_container.write(f"🛠️ {tc['name']}")
+                    
+                    elif last_msg.type == "tool":
+                        captured_outputs.append(last_msg.content)
+                    
+                    elif isinstance(last_msg, AIMessage) and not last_msg.tool_calls:
+                        full_response = last_msg.content
+                        message_placeholder.markdown(full_response)
+
+                status_container.update(label="完了", state="complete", expanded=False)
+                
+                if full_response:
+                    st.session_state.messages.append({
+                        "role": "assistant", 
+                        "content": full_response,
+                        "tool_output": "\n".join(captured_outputs) if captured_outputs else None
+                    })
+                    st.rerun()
+                    
+            except Exception as e:
+                status_container.update(label="エラー", state="error")
+                st.error(f"通信エラー: {e}")
+                st.info("ngrokのURLが正しいか確認してください。")
+
+        # ---------------------------------------------------------
+        # B. 参考文献検索 (RAG) モード
+        # ---------------------------------------------------------
+        else:
+            # RAG検索実行
+            with st.spinner("参考文献を検索中..."):
+                ref_result = search_references_action(prompt, main_llm_client)
+                
+                message_placeholder.markdown(ref_result)
+                
                 st.session_state.messages.append({
-                    "role": "assistant", 
-                    "content": full_response,
-                    "tool_output": "\n".join(captured_outputs) if captured_outputs else None
+                    "role": "assistant",
+                    "content": ref_result,
+                    "tool_output": None
                 })
                 st.rerun()
-                
-        except Exception as e:
-            status_container.update(label="エラー", state="error")
-            st.error(f"通信エラー: {e}")
-            st.info("ngrokのURLが正しいか確認してください。")
