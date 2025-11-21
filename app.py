@@ -64,7 +64,7 @@ with st.sidebar:
     )
     
     # モデル名は固定または入力
-    model_name = "local-model"
+    model_name = "openai/gpt-oss-120b"
 
     st.markdown("---")
     st.write("🔍 **検索設定**")
@@ -229,6 +229,7 @@ def analyze_statistics(query: str) -> str:
     
     【出力ルール】
     - 上記の辞書にある列名を正確に使用すること。存在しない列名(例: 'judgment', 'result_all')は禁止。
+    - 抽出や事例検索の際は、必ず `case_id` と、条件に関連する列（判定結果など）をすべて表示すること。
     - Pythonコードのみを出力 (Markdownタグなし)。
     - 結果は必ず `print()` で出力。
     """
@@ -239,6 +240,13 @@ def analyze_statistics(query: str) -> str:
         code = response.content.replace("```python", "").replace("```", "").strip()
         
         local_env = {'df': df_global.copy(), 'pd': pd}
+        
+        # 表示設定（省略防止）
+        pd.set_option('display.max_rows', None)
+        pd.set_option('display.max_columns', None)
+        pd.set_option('display.max_colwidth', None)
+        pd.set_option('display.width', 1000)
+
         old_stdout = sys.stdout
         redirected_output = io.StringIO()
         sys.stdout = redirected_output
