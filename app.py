@@ -177,12 +177,12 @@ def analyze_statistics(query: str) -> str:
        - 「審判日」「日付」 -> 'decision_date' (形式: YYYY-MM-DD)
        - 「申立内容」「申立ての種類」 「申立て」-> 'petition_type'
           ※「親権停止」,「親権喪失」,「親権停止取消し」のいずれかで、他に入るものはない。勝手に作らないこと
-       - 「虐待」「虐待の類型」 -> 'abuse_type_1', 'abuse_type_2, ...'
-          ※「身体的虐待」,「性的虐待」,「心理的虐待」,「ネグレクト」,「医療ネグレクト」のいずれかで,他に入るものはない。日本語のみである。
+       - 「虐待」「虐待の類型」 -> 'physical_abuse', 'neglect', 'medical_neglect', 'psychological_abuse', 'sexual_abuse'
+          ※これらはTRUE, FALSEが入っている列である。
 
 
     2. 当事者 (タグ情報)
-       - 「申立人」 -> 'petitioner_A_tag', 'petitioner_B_tag' (人数は 'petitioner_count')
+       - 「申立人」 -> 'petitioner_A_tag', 'petitioner_B_tag', 'petitioner_C_tag', 'petitioner_D_tag' (人数は 'petitioner_count')
        - 「事件本人」「相手方」「親」 -> 'subject_A_tag', 'subject_B_tag' (人数は 'subject_count')
           ※ [父], [母], [検察官], [児童相談所長] などが含まれる。「未成年者本人」とは、[子]のことを指す。
 
@@ -193,11 +193,13 @@ def analyze_statistics(query: str) -> str:
        - 「子の人数」 -> 'child_count'
        - 「子」「子供」 -> 'child_A_tag', 'child_B_tag', 'child_C_tag', 'child_D_tag'
        - 「年齢」 -> 'child_A_age', 'child_B_age', 'child_C_age', 'child_D_age'
+       - 「生年月日」 -> 'child_A_birthdate', 'child_B_birthdate', ...
        - 「監護状況」 -> 'child_A_custody', 'child_B_custody', 'child_C_custody', 'child_D_custody'
 
 
     4. 審判結果 (最も重要)
-       - 「結果」「審判」 -> 'child_A_result', 'child_B_result', 'child_C_result', 'child_D_result'      
+       - 「結果」「審判」 -> 'child_A_result', 'child_B_result', 'child_C_result', 'child_D_result' 
+       - 「停止の種類」 -> 'childA_Suspension_type', 'child_B_Suspension_type', ...     
        - 「停止期間」「月数」 -> 'childA_Suspension_months', 'child_B_Suspension_months', ... (数値)
        - 「停止終了日」 -> 'childA_Suspension_end_date', 'child_B_Suspension_end_date', ...
 
